@@ -6,15 +6,18 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents; // Po
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.vehicle.Minecart;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.inventory.ClickType; // Ważne: Rodzaj kliknięcia
+import net.minecraft.world.item.Items;
+import net.minecraft.world.inventory.Slot;
 
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public class ExampleModClient implements ClientModInitializer {
 
-    // Te zmienne muszą być TUTAJ (jako pola klasy), żeby "żyły" cały czas
-    private boolean active = false; // Czy automat jest włączony?
+    private boolean active = false;
     private int timer = 0;
     Minecraft mc = Minecraft.getInstance();
 
@@ -24,51 +27,35 @@ public class ExampleModClient implements ClientModInitializer {
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
 
-            // Jeśli automat jest wyłączony LUB nie ma gracza (np. menu główne) -> nic nie rób
             if (!active || client.player == null) return;
-
-            // Zwiększamy licznik o 1 w każdej klatce
             timer++;
-
-            // Logika ruchu
-            // 20 ticków = 1 sekunda
 
             client.player.setYRot(90);
             client.player.setXRot(0);
             client.options.keyAttack.setDown(true);
+            if(durabilityCheck() < 20){client.player.connection.sendCommand("repair");}
 
-            if (timer < 20) {
-                // ETAP 1 (Pierwsza sekunda): Idź w PRAWO (dodatni X)
-                // Ustawiamy ruch na 0.3 w osi X, zachowując obecny ruch w pionie (Y)
+            if (timer < 15) {
                 client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, 0.3);
 
-            } else if (timer < 40) {
-                // ETAP 2 (Druga sekunda): Idź w LEWO (ujemny X)
+            } else if (timer < 30) {
                 client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, -0.3);
 
             } else {
-                // KONIEC CYKLU: Resetujemy licznik
+
                 timer = 0;
             }
         });
 
 
-        // 2. Rejestrujemy KOMENDĘ do włączania/wyłączania
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-
-            dispatcher.register(literal("taniec")
+            dispatcher.register(literal("kop")
                     .executes(context -> {
 
-
-                        // Zmieniamy stan na przeciwny (Włącz -> Wyłącz, Wyłącz -> Włącz)
                         active = !active;
 
-                        // Resetujemy timer dla bezpieczeństwa
+
                         timer = 0;
-
-
-                        if(durabilityCheck() < 20){mc.player.connection.sendCommand("repair");}
-
                         if (active) {
                             context.getSource().sendFeedback(Component.literal("§aWłączyłeś auto-chodzenie!"));
                         } else {
@@ -77,6 +64,16 @@ public class ExampleModClient implements ClientModInitializer {
 
                         return 1;
                     }));
+
+            dispatcher.register(literal("craftuj")
+                    .executes(context -> {
+
+                            crafting();
+
+                        return 1;
+                    }));
+
+
         });
     }
 
@@ -96,5 +93,43 @@ public class ExampleModClient implements ClientModInitializer {
     }
 
 
+    private void clickSlot(int windowId, int slotId, int button, ClickType type) {
+        if (mc.gameMode != null) {
+            mc.gameMode.handleInventoryMouseClick(windowId, slotId, button, type, mc.player);
+        }
+    }
+
+    private int znajdzSlotZPrzedmiotem() {
+        var menu = mc.player.containerMenu;
+
+        for (int i = 9; i < menu.slots.size(); i++) {
+            Slot slot = menu.getSlot(i);
+            if (slot.hasItem() && slot.getItem().getItem() == Items.STONE) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
+    private void crafting() {
+
+        if (mc.player.containerMenu == null) {
+            return;
+        }
+        int windowId = mc.player.containerMenu.containerId;
+
+        int slotZDiamentem = znajdzSlotZPrzedmiotem();
+        clickSlot(windowId, slotZDiamentem, 0,ClickType.PICKUP);
+        for(int i = 0; i <= 64; i++) {
+            for (int craftingSlot = 1; craftingSlot <= 4; craftingSlot++) {
+                clickSlot(windowId, craftingSlot, 1, ClickType.PICKUP);
+            }
+        }
+
+        clickSlot(windowId, 0, 0,ClickType.QUICK_MOVE);
+        return;
+
+    }
 
 }

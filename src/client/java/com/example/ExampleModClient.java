@@ -1,9 +1,12 @@
 package com.example;
 
+import com.mojang.authlib.minecraft.client.MinecraftClient;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents; // Potrzebne do pętli!
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.vehicle.Minecart;
 import net.minecraft.world.item.Item;
@@ -11,6 +14,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.ClickType; // Ważne: Rodzaj kliknięcia
 import net.minecraft.world.item.Items;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -18,6 +24,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 public class ExampleModClient implements ClientModInitializer {
 
     private boolean active = false;
+    boolean drewno = false;
     private int timer = 0;
     Minecraft mc = Minecraft.getInstance();
 
@@ -26,6 +33,18 @@ public class ExampleModClient implements ClientModInitializer {
 
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+
+            if(drewno) {
+                if (scanner(20) > 3) {
+                    client.options.keyUp.setDown(true);
+                    client.options.keyAttack.setDown(true);
+                }else{
+                    client.options.keyUp.setDown(false);
+                    client.options.keyAttack.setDown(true);
+                }
+
+
+            }
 
             if (!active || client.player == null) return;
             timer++;
@@ -73,8 +92,30 @@ public class ExampleModClient implements ClientModInitializer {
                         return 1;
                     }));
 
+            dispatcher.register(literal("drewno")
+                    .executes(context -> {
+                        drewno = !drewno;
+
+                        if (drewno) {
+                            context.getSource().sendFeedback(Component.literal("§aWłączyłeś kopanie drewna!"));
+                        } else {
+                            context.getSource().sendFeedback(Component.literal("§cZatrzymano."));
+                        }
+                        return 1;
+                    }));
+
 
         });
+
+
+
+
+
+
+
+
+
+
     }
 
 
@@ -131,5 +172,57 @@ public class ExampleModClient implements ClientModInitializer {
         return;
 
     }
+
+    private double scanner(int RADIUS) {
+        var player = mc.player;
+        var level = mc.level;
+        var playerPos = player.blockPosition();
+        double target_x, target_y, target_z;
+
+        for(int radius = 1; radius <= RADIUS; radius++) {
+        for (int x = 0; x <= radius; x++) {
+            for (int y = 0; y <= radius; y++) {
+                for (int z = 0; z <= radius; z++) {
+                    for (int znak = -1; znak <= 1; znak+=2) {
+                        BlockPos checkPos = playerPos.offset(x*znak , y*znak, z*znak);
+                        BlockState state = level.getBlockState(checkPos);
+
+                        if (state.is(Blocks.SPRUCE_LOG)) {
+                            return lookAt(checkPos.getX(), checkPos.getY(), checkPos.getZ());
+                        }
+                    }
+                }
+            }
+        }
+        }
+        return -1;
+    }
+
+
+    private double lookAt(double targetX, double targetY, double targetZ) {
+
+        float pi = (float) Math.PI;
+        net.minecraft.client.player.LocalPlayer player = mc.player;
+        Vec3 playerPos = player.getEyePosition();
+
+        double dx = targetX + 0.5 - playerPos.x;
+        double dy = targetY+ 0.5 - playerPos.y;
+        double dz = targetZ + 0.5 - playerPos.z;
+
+        double distanceXZ = Math.sqrt(dx * dx + dz * dz);
+
+        float yaw = (float) Math.atan2(dz, dx) / (2*pi) * 360 - 90;
+
+        float pitch = (float) -Math.toDegrees(Math.atan2(dy, distanceXZ));
+
+        player.setYRot(yaw);
+        player.setXRot(pitch);
+
+
+        player.yRotO = yaw;
+        player.xRotO = pitch;
+        return distanceXZ;
+    }
+
 
 }

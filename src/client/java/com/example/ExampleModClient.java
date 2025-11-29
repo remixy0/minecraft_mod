@@ -1,4 +1,6 @@
 package com.example;
+
+import com.example.controler.Controler;
 import com.example.network.MojSerwer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -24,6 +26,7 @@ public class ExampleModClient implements ClientModInitializer {
     private int timer = 0;
     Minecraft mc = Minecraft.getInstance();
     MojSerwer mojSerwer = new MojSerwer();
+    Controler controler = new Controler(mc);
 
     @Override
     public void onInitializeClient() {
@@ -68,16 +71,52 @@ public class ExampleModClient implements ClientModInitializer {
                 client.options.pauseOnLostFocus = false;
             }
 
-            if(drewno) {
-                if (scanner(20) > 3) {
-                    client.options.keyUp.setDown(true);
-                    client.options.keyAttack.setDown(true);
-                }else{
-                    client.options.keyUp.setDown(false);
-                    client.options.keyAttack.setDown(true);
+
+            if (drewno) { // (Zakładam, że ta zmienna włącza bota ametystowego)
+
+                double[] dane = controler.scanner_ametyst(10);
+                if (dane[0] != -1) {
+                    double dystans = Math.sqrt(dane[0] * dane[0] + dane[1] * dane[1]);
+                    client.options.keyAttack.setDown(false);
+
+                    if (dystans > 3.5) {
+                        client.options.keyUp.setDown(true);
+
+                        String cel = controler.coWidze();
+
+                        if ("minecraft:oak_log".equals(cel) || "minecraft:oak_leaves".equals(cel)) {
+                            client.options.keyAttack.setDown(true);
+                        } else {
+                            client.options.keyAttack.setDown(false);
+                            client.options.keyUp.setDown(true);
+                        }
+
+                    } else {
+                        client.options.keyUp.setDown(false);
+
+                        String cel = controler.coWidze();
+
+                        if ("minecraft:oak_log".equals(cel) || "minecraft:oak_leaves".equals(cel)) {
+                            client.options.keyAttack.setDown(true);
+                        } else {
+                            client.options.keyAttack.setDown(false);
+                            client.options.keyUp.setDown(true);
+                        }
+                    }
+                    if (dane[1] < 1) {
+                        controler.lookAt(dane[0],dane[1]-1,dane[2]);
+
+                        String coWidze = controler.coWidze();
+                        if (!"minecraft:dirt".equals(coWidze)) {
+                            client.options.keyAttack.setDown(true);
+                            return;
+                        } else {
+                            client.options.keyAttack.setDown(false);
+                            client.options.keyUse.setDown(true);
+                            return;
+                        }
+                    }
                 }
-
-
             }
 
             if (!active || client.player == null) return;
@@ -140,15 +179,6 @@ public class ExampleModClient implements ClientModInitializer {
 
         });
 
-
-
-
-
-
-
-
-
-
     }
 
 
@@ -206,7 +236,7 @@ public class ExampleModClient implements ClientModInitializer {
 
     }
 
-    private double scanner(int RADIUS) {
+    private double scanner_drewno(int RADIUS) {
         var player = mc.player;
         var level = mc.level;
         var playerPos = player.blockPosition();
@@ -230,6 +260,8 @@ public class ExampleModClient implements ClientModInitializer {
         }
         return -1;
     }
+
+
 
 
     private double lookAt(double targetX, double targetY, double targetZ) {

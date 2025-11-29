@@ -1,15 +1,11 @@
 package com.example;
-
-import com.mojang.authlib.minecraft.client.MinecraftClient;
-import com.mojang.brigadier.arguments.DoubleArgumentType;
+import com.example.network.MojSerwer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents; // Potrzebne do pętli!
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.vehicle.Minecart;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.ClickType; // Ważne: Rodzaj kliknięcia
 import net.minecraft.world.item.Items;
@@ -23,16 +19,54 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 
 public class ExampleModClient implements ClientModInitializer {
 
-    private boolean active = false;
+    private volatile boolean active = false;
     boolean drewno = false;
     private int timer = 0;
     Minecraft mc = Minecraft.getInstance();
+    MojSerwer mojSerwer = new MojSerwer();
 
     @Override
     public void onInitializeClient() {
 
+        Thread watekSieciowy = new Thread(() -> {
+            while (true) {
+                mojSerwer.polacz();
+                boolean nowaWartosc = false;
+                while (true) { // Nieskończona pętla w tle
+                    try {
+                        // Pobieramy dane z serwera
+                        Boolean wartosc = mojSerwer.getValue();
+                        if (wartosc != null) {
+                            nowaWartosc = wartosc;
+                        }
+
+                        if (active != nowaWartosc) {
+                            System.out.println("Zdalna zmiana stanu na: " + nowaWartosc);
+                            active = nowaWartosc;
+                        }
+
+                        // WAŻNE: Odpocznij chwilę, żeby nie spalić procesora (np. 10 razy na sekundę)
+                        Thread.sleep(100);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException ex) {
+                        } // Jak błąd, poczekaj dłużej
+                    }
+                }
+            }
+        });
+        watekSieciowy.setDaemon(true); // Wątek zginie razem z zamknięciem gry
+        watekSieciowy.start();
+
+
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.options != null) {
+                client.options.pauseOnLostFocus = false;
+            }
 
             if(drewno) {
                 if (scanner(20) > 3) {

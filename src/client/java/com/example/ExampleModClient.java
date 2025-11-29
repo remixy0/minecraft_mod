@@ -54,10 +54,10 @@ public class ExampleModClient implements ClientModInitializer {
             client.options.keyAttack.setDown(true);
             if(durabilityCheck() < 20){client.player.connection.sendCommand("repair");}
 
-            if (timer < 15) {
+            if (timer < 7) {
                 client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, 0.3);
 
-            } else if (timer < 30) {
+            } else if (timer < 14) {
                 client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, -0.3);
 
             } else {
@@ -73,10 +73,9 @@ public class ExampleModClient implements ClientModInitializer {
 
                         active = !active;
 
-
                         timer = 0;
                         if (active) {
-                            context.getSource().sendFeedback(Component.literal("§aWłączyłeś auto-chodzenie!"));
+                            context.getSource().sendFeedback(Component.literal("§aWłączyłeś auto-kopanie!"));
                         } else {
                             context.getSource().sendFeedback(Component.literal("§cZatrzymano."));
                         }

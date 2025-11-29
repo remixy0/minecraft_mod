@@ -19,15 +19,28 @@ repositories {
 }
 
 loom {
-	splitEnvironmentSourceSets()
+    splitEnvironmentSourceSets()
 
-	mods {
-		"modid" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
-		}
-	}
+    runs {
+        client {
+            client()  // <--- TEGO BRAKOWAŁO! To dziedziczy domyślne ustawienia Minecrafta.
 
+            setConfigName("Minecraft Client") // Nadaje ładną nazwę w menu
+            ideConfigGenerated(true) // Wymusza pojawienie się w IDE
+            runDir("run") // Ustawia folder roboczy
+
+            // Twój nick
+            programArgs "--username", "leonidas24"
+        }
+    }
+
+    mods {
+        // Pamiętaj, żeby "modid" zmienić na ID twojego moda (z pliku fabric.mod.json)
+        "modid" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
 }
 
 dependencies {
@@ -38,7 +51,7 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	
+
 }
 
 processResources {

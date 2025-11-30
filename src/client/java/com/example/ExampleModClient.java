@@ -21,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.Math.abs;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public class ExampleModClient implements ClientModInitializer {
@@ -69,7 +70,7 @@ public class ExampleModClient implements ClientModInitializer {
         watekSieciowy.start();
 
 
-        final double[][] blok = {new double[1]};
+        final double[][] blok = new double[1][3];
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
@@ -89,11 +90,13 @@ public class ExampleModClient implements ClientModInitializer {
 
                         if (dane[1] <= -1) {
                             blok[0] = dane;
+                            blok[0][0] += client.player.getX();
+                            blok[0][2] += client.player.getZ();
                             postawiono_sadzonke = false;
                         }
 
                         if (!postawiono_sadzonke) {
-                            if (sadzonka(blok[0], dystans, client)) {
+                            if (sadzonka(blok[0],client)) {
                                 postawiono_sadzonke = true;
                                 client.player.displayClientMessage(Component.literal("§dPostawiłem sadzonke"), false);
                             }
@@ -106,20 +109,36 @@ public class ExampleModClient implements ClientModInitializer {
                             String cel = controler.coWidze();
 
                             if ("minecraft:oak_log".equals(cel) || "minecraft:oak_leaves".equals(cel)) {
+                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+                                }
                                 client.options.keyAttack.setDown(true);
+                                client.options.keyUse.setDown(false);
                             } else {
+                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+                                }
                                 client.options.keyAttack.setDown(false);
                                 client.options.keyUp.setDown(true);
+                                client.options.keyUse.setDown(false);
                             }
 
                         } else {
                             String cel = controler.coWidze();
 
                             if ("minecraft:oak_log".equals(cel) || "minecraft:oak_leaves".equals(cel)) {
+                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+                                }
                                 client.options.keyAttack.setDown(true);
+                                client.options.keyUse.setDown(false);
                             } else {
+                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+                                }
                                 client.options.keyAttack.setDown(false);
                                 client.options.keyUp.setDown(true);
+                                client.options.keyUse.setDown(false);
                             }
                         }
                     }
@@ -210,35 +229,43 @@ public class ExampleModClient implements ClientModInitializer {
 
 
 
-    private boolean sadzonka(double[] coordinates, double distance,Minecraft client ) {
-        double offset = distance/10;
-        controler.lookAt(coordinates[0],coordinates[1] - offset,coordinates[2], true);
+    private boolean sadzonka(double[] coordinates, Minecraft client) {
+        LocalPlayer player = mc.player;
+        Vec3 playerPos = player.getEyePosition();
+        net.minecraft.world.entity.player.Inventory eq = mc.player.getInventory();
+
+        double distance = Math.sqrt((coordinates[0] - playerPos.x) * (coordinates[0] - playerPos.x) + (coordinates[2] - playerPos.z) * (coordinates[2] - playerPos.z));
+//        double offset = distance/10 * 2;
+        client.player.displayClientMessage(Component.literal("§cDystans " + String.format("%.2f", distance)), false);
+        controler.lookAt(coordinates[0] - 0.5,playerPos.y - 2 ,coordinates[2] - 0.5, false);
         String blockSeen = controler.coWidze();
-        client.options.keyUp.setDown(false);
-        if(distance > 3) {
+//       client.player.displayClientMessage(Component.literal("§3distance" + distance), false);
+        if(distance > 2) {
             client.options.keyUp.setDown(true);
             client.options.keyAttack.setDown(true);
         }
-        else{
+        else {
             client.options.keyUp.setDown(false);
             client.options.keyAttack.setDown(false);
-        }
 
-        if (blockSeen.equals("minecraft:oak_log") || blockSeen.equals("minecraft:oak_leaves")) {
-            client.player.displayClientMessage(Component.literal("§3drewno"), false);
-            client.options.keyAttack.setDown(true);
-            client.options.keyUse.setDown(false);
-        }
-        else if (blockSeen.equals("minecraft:dirt") || blockSeen.equals("minecraft:grass_block")) {
-            client.player.displayClientMessage(Component.literal("§5dirt"), false);
-            client.options.keyAttack.setDown(false);
-            client.options.keyUse.setDown(true);
-            return true;
+            if (blockSeen.equals("minecraft:oak_log") || blockSeen.equals("minecraft:oak_leaves")) {
+                client.options.keyAttack.setDown(true);
+                client.options.keyUse.setDown(false);
+            } else if (blockSeen.equals("minecraft:dirt") || blockSeen.equals("minecraft:grass_block")) {
+                client.options.keyAttack.setDown(false);
 
-        }
-        else{
-            client.options.keyAttack.setDown(false);
-            client.options.keyUse.setDown(false);
+                if(controler.znajdzSlotZPrzedmiotem(Items.OAK_SAPLING) != -1){
+                    eq.setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.OAK_SAPLING));
+                }
+
+                client.options.keyUse.setDown(true);
+                return true;
+
+            } else {
+                client.options.keyAttack.setDown(false);
+                client.options.keyUse.setDown(false);
+            }
+
         }
         return false;
     }

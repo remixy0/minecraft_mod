@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -136,12 +137,11 @@ public class Controler {
     }
 
 
-    public int znajdzSlotZPrzedmiotem() {
-        var menu = mc.player.containerMenu;
-
-        for (int i = 9; i < menu.slots.size(); i++) {
-            Slot slot = menu.getSlot(i);
-            if (slot.hasItem() && slot.getItem().getItem() == Items.STONE) {
+    public int znajdzSlotZPrzedmiotem(net.minecraft.world.item.Item szukanyPrzedmiot) {
+        net.minecraft.world.entity.player.Inventory inv = mc.player.getInventory();
+        for (int i = 0; i < 9; i++) {
+            ItemStack stos = inv.getItem(i);
+            if (!stos.isEmpty() && stos.is(szukanyPrzedmiot)) {
                 return i;
             }
         }
@@ -161,7 +161,7 @@ public class Controler {
         }
         int windowId = mc.player.containerMenu.containerId;
 
-        int slotZDiamentem = znajdzSlotZPrzedmiotem();
+        int slotZDiamentem = znajdzSlotZPrzedmiotem(Items.STONE);
         clickSlot(windowId, slotZDiamentem, 0, ClickType.PICKUP);
         for(int i = 0; i <= 64; i++) {
             for (int craftingSlot = 1; craftingSlot <= 4; craftingSlot++) {

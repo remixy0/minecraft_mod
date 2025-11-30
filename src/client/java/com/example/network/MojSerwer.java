@@ -24,14 +24,14 @@ public class MojSerwer{
                     new InputStreamReader(clientSocket.getInputStream())
             );
 
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void wyslij(String wiadomosc) throws IOException {
-        socket2 = new Socket("localhost", 6666);
-        out = new PrintWriter(socket2.getOutputStream(), true);
         out.println(wiadomosc);
     }
 

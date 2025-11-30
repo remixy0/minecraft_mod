@@ -1,18 +1,23 @@
 package com.example.network;
 
+import org.apache.logging.log4j.core.jmx.Server;
+
 import java.net.InetAddress;
 import java.io.*;
 import java.net.*;
 
 public class MojSerwer{
+    Socket socket2;
+    ServerSocket socket;
     BufferedReader in;
+    PrintWriter out;
     public MojSerwer(){
     }
     public void polacz(){
         try {
-            ServerSocket serverSocket = new ServerSocket(6666, 50, InetAddress.getByName("0.0.0.0"));
+            socket = new ServerSocket(6666, 50, InetAddress.getByName("0.0.0.0"));
             System.out.println("Serwer uruchomiony. Czekam na połączenie...");
-            Socket clientSocket = serverSocket.accept();
+            Socket clientSocket = socket.accept();
             System.out.println("Klient się połączył!");
 
             in = new BufferedReader(
@@ -23,6 +28,13 @@ public class MojSerwer{
             e.printStackTrace();
         }
     }
+
+    public void wyslij(String wiadomosc) throws IOException {
+        socket2 = new Socket("localhost", 6666);
+        out = new PrintWriter(socket2.getOutputStream(), true);
+        out.println(wiadomosc);
+    }
+
 
     public Boolean getValue() throws IOException {
         String wiadomosc = in.readLine();

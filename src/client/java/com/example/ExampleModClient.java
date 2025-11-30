@@ -82,7 +82,7 @@ public class ExampleModClient implements ClientModInitializer {
 
 
                 if (drewno) {
-                    double[] dane = controler.scanner_ametyst(10);
+                    double[] dane = controler.scanner_ametyst(30);
 
                     if (dane[0] != -99) {
 
@@ -93,6 +93,8 @@ public class ExampleModClient implements ClientModInitializer {
                             blok[0][0] += client.player.getX();
                             blok[0][2] += client.player.getZ();
                             postawiono_sadzonke = false;
+                            int ilosc_drewna = controler.policzPrzedmiotWeq(Items.OAK_LOG);
+                            mojSerwer.wyslij("§cMam już " + ilosc_drewna + " drewna");
                         }
 
                         if (!postawiono_sadzonke) {

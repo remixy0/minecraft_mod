@@ -148,6 +148,18 @@ public class Controler {
         return -1;
     }
 
+    public int policzPrzedmiotWeq(net.minecraft.world.item.Item szukanyPrzedmiot) {
+        net.minecraft.world.entity.player.Inventory inv = mc.player.getInventory();
+        int sum = 0;
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stos = inv.getItem(i);
+            if (!stos.isEmpty() && stos.is(szukanyPrzedmiot)) {
+                sum += stos.getCount();
+            }
+        }
+        return sum;
+    }
+
     public void clickSlot(int windowId, int slotId, int button, ClickType type) {
         if (mc.gameMode != null) {
             mc.gameMode.handleInventoryMouseClick(windowId, slotId, button, type, mc.player);

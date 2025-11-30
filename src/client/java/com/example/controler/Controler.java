@@ -49,7 +49,7 @@ public class Controler {
 
                         if(distSq_block < 3 && distSq_player < 9) {
                             this.previousBlock = checkPos;
-                            return lookAt(checkPos.getX(), checkPos.getY(), checkPos.getZ());
+                            return lookAt(checkPos.getX(), checkPos.getY(), checkPos.getZ(), false);
 
                         }else{
                             distSq = distSq_player;
@@ -67,20 +67,28 @@ public class Controler {
 
         if (closestPos != null) {
             this.previousBlock = closestPos;
-            return lookAt(closestPos.getX(), closestPos.getY(), closestPos.getZ());
+            return lookAt(closestPos.getX(), closestPos.getY(), closestPos.getZ(), false);
         }
-        return new double[]{-1};
+        return new double[]{-99};
     }
 
-    public double[] lookAt(double targetX, double targetY, double targetZ) {
+    public double[] lookAt(double targetX, double targetY, double targetZ, boolean relative) {
+        double dx, dy, dz;
 
         float pi = (float) Math.PI;
         LocalPlayer player = mc.player;
         Vec3 playerPos = player.getEyePosition();
 
-        double dx = targetX + 0.5 - playerPos.x;
-        double dy = targetY+ 0.5 - playerPos.y;
-        double dz = targetZ + 0.5 - playerPos.z;
+        if (relative) {
+            dx = targetX;
+            dy = targetY;
+            dz = targetZ;
+
+        }else {
+            dx = targetX + 0.5 - playerPos.x;
+            dy = targetY + 0.5 - playerPos.y;
+            dz = targetZ + 0.5 - playerPos.z;
+        }
 
 
 

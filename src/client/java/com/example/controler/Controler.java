@@ -114,7 +114,7 @@ public class Controler {
         HitResult cel = mc.hitResult;
 
         if (cel == null || cel.getType() == HitResult.Type.MISS) {
-            return null;
+            return "";
         }
 
         if (cel.getType() == HitResult.Type.BLOCK) {
@@ -129,10 +129,10 @@ public class Controler {
         }
 
         if (cel.getType() == HitResult.Type.ENTITY) {
-            return null;
+            return "";
         }
 
-        return null;
+        return "";
     }
 
 

@@ -2,6 +2,7 @@ package com.example;
 
 import com.example.controler.Controler;
 import com.example.network.MojSerwer;
+import com.google.common.util.concurrent.AtomicDouble;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents; // Potrzebne do pętli!
@@ -18,12 +19,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public class ExampleModClient implements ClientModInitializer {
 
     private volatile boolean active = false;
     private volatile boolean drewno = false;
+    private volatile boolean postawiono_sadzonke = false;
     private int timer = 0;
     Minecraft mc = Minecraft.getInstance();
     MojSerwer mojSerwer = new MojSerwer();
@@ -65,6 +69,7 @@ public class ExampleModClient implements ClientModInitializer {
         watekSieciowy.start();
 
 
+        final double[][] blok = {new double[1]};
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
@@ -72,38 +77,28 @@ public class ExampleModClient implements ClientModInitializer {
                     client.options.pauseOnLostFocus = false;
                 }
                 timer++;
-                boolean sent = false;
 
-                if (timer % 20 == 0) {
-                    sent = false;
-                }
+
 
                 if (drewno) {
-                    client.options.keyUse.setDown(false);
                     double[] dane = controler.scanner_ametyst(10);
+
                     if (dane[0] != -99) {
 
                         double dystans = Math.sqrt(dane[0] * dane[0] + dane[1] * dane[1]);
 
                         if (dane[1] <= -1) {
-                            client.player.displayClientMessage(Component.literal("§aZnaleziono sadzonke"), false);
-
-                            controler.lookAt(dane[0], dane[1] - 1, dane[2], true);
-                            String blockSeen = controler.coWidze();
-                            client.options.keyUp.setDown(false);
-                            if (blockSeen.equals("minecraft:oak_log")) {
-                                client.options.keyAttack.setDown(true);
-                                client.options.keyUse.setDown(false);
-
-                            } else if (blockSeen.equals("minecraft:dirt") || blockSeen.equals("minecraft:grass_block")) {
-                                client.options.keyAttack.setDown(false);
-                                client.options.keyUse.setDown(true);
-
-                            } else {
-                                client.options.keyAttack.setDown(false);
-                                client.options.keyUse.setDown(false);
-                            }
+                            blok[0] = dane;
+                            postawiono_sadzonke = false;
                         }
+
+                        if (!postawiono_sadzonke) {
+                            if (sadzonka(blok[0], dystans, client)) {
+                                postawiono_sadzonke = true;
+                                client.player.displayClientMessage(Component.literal("§dPostawiłem sadzonke"), false);
+                            }
+                        }else{
+
 
                         if (dystans > 3.5) {
                             client.options.keyUp.setDown(true);
@@ -118,27 +113,6 @@ public class ExampleModClient implements ClientModInitializer {
                             }
 
                         } else {
-                            if (dane[1] <= -1) {
-                                System.out.println("SADZONKAAAAAAAAAAAAAAAAAAAAA");
-                                controler.lookAt(dane[0], dane[1] - 1, dane[2], true);
-                                String blockSeen = controler.coWidze();
-
-                                if (blockSeen.equals("minecraft:oak_log")) {
-                                    client.options.keyAttack.setDown(true);
-                                    client.options.keyUse.setDown(false);
-
-                                } else if (blockSeen.equals("minecraft:dirt") || blockSeen.equals("minecraft:grass_block")) {
-                                    client.options.keyAttack.setDown(false);
-                                    client.options.keyUse.setDown(true);
-                                    client.options.keyUse.setDown(false);
-
-                                } else {
-                                    client.options.keyAttack.setDown(false);
-                                    client.options.keyUse.setDown(false);
-                                }
-                            }
-                            client.options.keyUp.setDown(false);
-
                             String cel = controler.coWidze();
 
                             if ("minecraft:oak_log".equals(cel) || "minecraft:oak_leaves".equals(cel)) {
@@ -149,28 +123,36 @@ public class ExampleModClient implements ClientModInitializer {
                             }
                         }
                     }
+                        }else{
+                            client.player.displayClientMessage(Component.literal("§6Brak drewna w okolicy"), false);
+                            client.options.keyAttack.setDown(false);
+                            client.options.keyUp.setDown(false);
+                            client.player.setYRot(90);
+                            client.player.setXRot(0);
+                        }
+
                 }
 
                 if (!active || client.player == null) return;
 
-
-                client.player.setYRot(90);
-                client.player.setXRot(0);
-                client.options.keyAttack.setDown(true);
-                if (durabilityCheck() < 20) {
-                    client.player.connection.sendCommand("repair");
-                }
-
-                if (timer < 7) {
-                    client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, 0.3);
-
-                } else if (timer < 14) {
-                    client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, -0.3);
-
-                } else {
-
-                    timer = 0;
-                }
+                client.player.displayClientMessage(Component.literal(controler.coWidze()), false);
+//                client.player.setYRot(90);
+//                client.player.setXRot(0);
+//                client.options.keyAttack.setDown(true);
+//                if (durabilityCheck() < 20) {
+//                    client.player.connection.sendCommand("repair");
+//                }
+//
+//                if (timer < 7) {
+//                    client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, 0.3);
+//
+//                } else if (timer < 14) {
+//                    client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, -0.3);
+//
+//                } else {
+//
+//                    timer = 0;
+//                }
             }catch (Exception e) {
                 e.printStackTrace(); // Wypisze błąd w konsoli
                 drewno = false;      // Wyłączy bota
@@ -188,6 +170,9 @@ public class ExampleModClient implements ClientModInitializer {
 
                         active = !active;
 
+                        if(active) {
+                            context.getSource().sendFeedback(Component.literal(controler.coWidze()));
+                        }
                         timer = 0;
                         if (active) {
                             context.getSource().sendFeedback(Component.literal("§aWłączyłeś auto-kopanie!"));
@@ -222,6 +207,43 @@ public class ExampleModClient implements ClientModInitializer {
         });
 
     }
+
+
+
+    private boolean sadzonka(double[] coordinates, double distance,Minecraft client ) {
+        double offset = distance/10;
+        controler.lookAt(coordinates[0],coordinates[1] - offset,coordinates[2], true);
+        String blockSeen = controler.coWidze();
+        client.options.keyUp.setDown(false);
+        if(distance > 3) {
+            client.options.keyUp.setDown(true);
+            client.options.keyAttack.setDown(true);
+        }
+        else{
+            client.options.keyUp.setDown(false);
+            client.options.keyAttack.setDown(false);
+        }
+
+        if (blockSeen.equals("minecraft:oak_log") || blockSeen.equals("minecraft:oak_leaves")) {
+            client.player.displayClientMessage(Component.literal("§3drewno"), false);
+            client.options.keyAttack.setDown(true);
+            client.options.keyUse.setDown(false);
+        }
+        else if (blockSeen.equals("minecraft:dirt") || blockSeen.equals("minecraft:grass_block")) {
+            client.player.displayClientMessage(Component.literal("§5dirt"), false);
+            client.options.keyAttack.setDown(false);
+            client.options.keyUse.setDown(true);
+            return true;
+
+        }
+        else{
+            client.options.keyAttack.setDown(false);
+            client.options.keyUse.setDown(false);
+        }
+        return false;
+    }
+
+
 
 
     private float durabilityCheck() {

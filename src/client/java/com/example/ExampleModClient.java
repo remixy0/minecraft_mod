@@ -71,6 +71,7 @@ public class ExampleModClient implements ClientModInitializer {
 
 
         final double[][] blok = new double[1][3];
+        final int[] stan_drewna = {0};
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
@@ -82,7 +83,7 @@ public class ExampleModClient implements ClientModInitializer {
 
 
                 if (drewno) {
-                    double[] dane = controler.scanner_ametyst(30);
+                    double[] dane = controler.scanner_ametyst(10);
 
                     if (dane[0] != -99) {
 
@@ -93,8 +94,15 @@ public class ExampleModClient implements ClientModInitializer {
                             blok[0][0] += client.player.getX();
                             blok[0][2] += client.player.getZ();
                             postawiono_sadzonke = false;
-                            int ilosc_drewna = controler.policzPrzedmiotWeq(Items.OAK_LOG);
-                            mojSerwer.wyslij("§cMam już " + ilosc_drewna + " drewna");
+
+
+                        }
+
+                        int ilosc_drewna = controler.policzPrzedmiotWeq(Items.OAK_LOG);
+                        if(ilosc_drewna != stan_drewna[0]) {
+                            client.player.displayClientMessage(Component.literal("§cMam już " + ilosc_drewna + " drewna"), false);
+                            //                          mojSerwer.wyslij("§cMam już " + ilosc_drewna + " drewna");
+                            stan_drewna[0] = ilosc_drewna;
                         }
 
                         if (!postawiono_sadzonke) {

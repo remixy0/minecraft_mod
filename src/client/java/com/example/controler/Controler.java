@@ -34,13 +34,13 @@ public class Controler {
         double closestDistance = Double.MAX_VALUE;
 
         for (int x = -RADIUS; x <= RADIUS; x++) {
-            for (int y = -2; y <= 6; y++) {
-                for (int z = -RADIUS; z <= RADIUS; z++) {
+            for (int z = -RADIUS; z <= RADIUS; z++) {
+                for (int y = -2; y <= 10; y++) {
 
                     BlockPos checkPos = playerPos.offset(x, y, z);
                     BlockState state = mc.level.getBlockState(checkPos);
 
-                    if (state.is(Blocks.OAK_LOG)) {
+                    if (state.is(Blocks.SPRUCE_LOG)) {
 
                         distSq_player = playerPos.distSqr(checkPos);
 
@@ -48,14 +48,14 @@ public class Controler {
                             distSq_block= this.previousBlock.distSqr(checkPos);
                         }
 
-                        if(distSq_block < 3 && distSq_player < 9) {
+                        if(distSq_block <= 3 && distSq_player < 10) {
                             this.previousBlock = checkPos;
                             return lookAt(checkPos.getX(), checkPos.getY(), checkPos.getZ(), false);
 
-                        }else{
-                            distSq = distSq_player;
+                        }else {
+                            distSq = distSq_player > distSq_block ? distSq_player : distSq_block;
+
                         }
-//                        distSq = distSq_player > distSq_block ? distSq_player : distSq_block;
 
                         if (distSq < closestDistance) {
                             closestDistance = distSq;

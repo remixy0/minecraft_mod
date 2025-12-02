@@ -33,6 +33,7 @@ public class ExampleModClient implements ClientModInitializer {
     Minecraft mc = Minecraft.getInstance();
     MojSerwer mojSerwer = new MojSerwer();
     Controler controler = new Controler(mc);
+    final double[] odleglosc = {0};
 
     @Override
     public void onInitializeClient() {
@@ -72,6 +73,8 @@ public class ExampleModClient implements ClientModInitializer {
 
         final double[][] blok = new double[1][3];
         final int[] stan_drewna = {0};
+
+
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
@@ -83,7 +86,7 @@ public class ExampleModClient implements ClientModInitializer {
 
 
                 if (drewno) {
-                    double[] dane = controler.scanner_ametyst(10);
+                    double[] dane = controler.scanner_ametyst(20);
 
                     if (dane[0] != -99) {
 
@@ -94,14 +97,13 @@ public class ExampleModClient implements ClientModInitializer {
                             blok[0][0] += client.player.getX();
                             blok[0][2] += client.player.getZ();
                             postawiono_sadzonke = false;
-
-
                         }
 
-                        int ilosc_drewna = controler.policzPrzedmiotWeq(Items.OAK_LOG);
+
+                        int ilosc_drewna = controler.policzPrzedmiotWeq(Items.SPRUCE_LOG);
                         if(ilosc_drewna != stan_drewna[0]) {
-                            client.player.displayClientMessage(Component.literal("§cMam już " + ilosc_drewna + " drewna"), false);
-                            //                          mojSerwer.wyslij("§cMam już " + ilosc_drewna + " drewna");
+                            client.player.displayClientMessage(Component.literal("§aMam już " + ilosc_drewna + " drewna"), false);
+//                            mojSerwer.wyslij("§cMam już " + ilosc_drewna + " drewna");
                             stan_drewna[0] = ilosc_drewna;
                         }
 
@@ -113,20 +115,21 @@ public class ExampleModClient implements ClientModInitializer {
                         }else{
 
 
-                        if (dystans > 3.5) {
+                        if (dystans > 6) {
                             client.options.keyUp.setDown(true);
 
                             String cel = controler.coWidze();
 
-                            if ("minecraft:oak_log".equals(cel) || "minecraft:oak_leaves".equals(cel)) {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+
+                            if ("minecraft:spruce_log".equals(cel) || "minecraft:spruce_leaves".equals(cel)) {
+                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
                                 }
                                 client.options.keyAttack.setDown(true);
                                 client.options.keyUse.setDown(false);
                             } else {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
                                 }
                                 client.options.keyAttack.setDown(false);
                                 client.options.keyUp.setDown(true);
@@ -136,15 +139,15 @@ public class ExampleModClient implements ClientModInitializer {
                         } else {
                             String cel = controler.coWidze();
 
-                            if ("minecraft:oak_log".equals(cel) || "minecraft:oak_leaves".equals(cel)) {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+                            if ("minecraft:spruce_log".equals(cel) || "minecraft:spruce_leaves".equals(cel)) {
+                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
                                 }
                                 client.options.keyAttack.setDown(true);
                                 client.options.keyUse.setDown(false);
                             } else {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.NETHERITE_AXE));
+                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
+                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
                                 }
                                 client.options.keyAttack.setDown(false);
                                 client.options.keyUp.setDown(true);
@@ -246,7 +249,11 @@ public class ExampleModClient implements ClientModInitializer {
 
         double distance = Math.sqrt((coordinates[0] - playerPos.x) * (coordinates[0] - playerPos.x) + (coordinates[2] - playerPos.z) * (coordinates[2] - playerPos.z));
 //        double offset = distance/10 * 2;
-        client.player.displayClientMessage(Component.literal("§cDystans " + String.format("%.2f", distance)), false);
+        if(odleglosc[0] != distance) {
+            client.player.displayClientMessage(Component.literal("§cDystans " + String.format("%.2f", distance)), false);
+            odleglosc[0] = distance;
+        }
+
         controler.lookAt(coordinates[0] - 0.5,playerPos.y - 2 ,coordinates[2] - 0.5, false);
         String blockSeen = controler.coWidze();
 //       client.player.displayClientMessage(Component.literal("§3distance" + distance), false);
@@ -258,14 +265,14 @@ public class ExampleModClient implements ClientModInitializer {
             client.options.keyUp.setDown(false);
             client.options.keyAttack.setDown(false);
 
-            if (blockSeen.equals("minecraft:oak_log") || blockSeen.equals("minecraft:oak_leaves")) {
+            if (blockSeen.equals("minecraft:spruce_log") || blockSeen.equals("minecraft:spruce_leaves")) {
                 client.options.keyAttack.setDown(true);
                 client.options.keyUse.setDown(false);
             } else if (blockSeen.equals("minecraft:dirt") || blockSeen.equals("minecraft:grass_block")) {
                 client.options.keyAttack.setDown(false);
 
-                if(controler.znajdzSlotZPrzedmiotem(Items.OAK_SAPLING) != -1){
-                    eq.setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.OAK_SAPLING));
+                if(controler.znajdzSlotZPrzedmiotem(Items.SPRUCE_SAPLING) != -1){
+                    eq.setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.SPRUCE_SAPLING));
                 }
 
                 client.options.keyUse.setDown(true);

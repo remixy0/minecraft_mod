@@ -1,15 +1,17 @@
 package com.example;
 
 import com.example.controler.Controler;
+import com.example.mixin.client.InGameHudAccessor;
 import com.example.network.MojSerwer;
-import com.google.common.util.concurrent.AtomicDouble;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents; // Potrzebne do pętli!
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.ClickType; // Ważne: Rodzaj kliknięcia
 import net.minecraft.world.item.Items;
@@ -19,6 +21,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.abs;
@@ -76,142 +81,83 @@ public class ExampleModClient implements ClientModInitializer {
         final double[][] blok = new double[1][3];
         final int[] stan_drewna = {0};
 
+        AtomicBoolean czyZlowiono = new AtomicBoolean(false);
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
 
 
+            String tekst = message.getString();
 
-        // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)
+            if (tekst.contains("Wędkarstwo") && tekst.contains("Wyłowiono")) {
+                czyZlowiono.set(true);
+
+
+            }
+        });
+
+        AtomicInteger counter = new AtomicInteger();
+        AtomicInteger counterZlowiono = new AtomicInteger();
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            counter.getAndIncrement();
+            counterZlowiono.getAndIncrement();
             try {
-                if (client.options != null) {
-                    client.options.pauseOnLostFocus = false;
-                }
-                timer++;
+                if (counterZlowiono.get() > 10) {
+                    if (mc.player != null && mc.gui != null && active) {
+                        Component title = ((InGameHudAccessor) mc.gui).getTitle();
+                        if (title != null) {
+                            List<String> list = new ArrayList<String>();
+                            String rawText = title.getString();
 
+                            title.visit((style, text) -> {
 
-
-                if (drewno) {
-                    double[] dane = controler.scanner_ametyst(20);
-
-                    if (dane[0] != -99) {
-
-                        double dystans = Math.sqrt(dane[0] * dane[0] + dane[1] * dane[1]);
-
-                        if (dane[1] <= -1) {
-                            blok[0] = dane;
-                            blok[0][0] += client.player.getX();
-                            blok[0][2] += client.player.getZ();
-                            postawiono_sadzonke = false;
-                        }
-
-
-                        int ilosc_drewna = controler.policzPrzedmiotWeq(Items.SPRUCE_LOG);
-                        if(ilosc_drewna != stan_drewna[0]) {
-                            client.player.displayClientMessage(Component.literal("§aMam już " + ilosc_drewna + " drewna"), false);
-//                            mojSerwer.wyslij("§cMam już " + ilosc_drewna + " drewna");
-                            stan_drewna[0] = ilosc_drewna;
-                        }
-
-                        if (!postawiono_sadzonke) {
-                            if (sadzonka(blok[0],client)) {
-                                postawiono_sadzonke = true;
-                                client.player.displayClientMessage(Component.literal("§dPostawiłem sadzonke"), false);
-                            }
-                        }else{
-
-
-                        if (dystans > 6) {
-                            client.options.keyUp.setDown(true);
-
-                            String cel = controler.coWidze();
-
-
-                            if ("minecraft:spruce_log".equals(cel) || "minecraft:spruce_leaves".equals(cel)) {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
+                                if (style.getColor() != null) {
+                                    String colorName = style.getColor().toString();
+                                    list.add(colorName);
+                                    System.out.println("Znak: '" + text + "' ma kolor: " + colorName);
                                 }
-                                client.options.keyAttack.setDown(true);
-                                client.options.keyUse.setDown(false);
-                            } else {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
-                                }
-                                client.options.keyAttack.setDown(false);
-                                client.options.keyUp.setDown(true);
+                                return java.util.Optional.empty();
+                            }, net.minecraft.network.chat.Style.EMPTY);
+
+                            if (client.options.keyUse.isDown()) {
                                 client.options.keyUse.setDown(false);
                             }
+
+                            if (list.stream().distinct().count() == 3 & !czyZlowiono.get()) {
+                                client.player.displayClientMessage(Component.literal("§aTERAZ LOWIC!"), false);
+                                mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+                                mc.player.swing(InteractionHand.MAIN_HAND);
+                                counterZlowiono.set(0);
+                            }
+
 
                         } else {
-                            String cel = controler.coWidze();
+                            if (mc.player != null && mc.gameMode != null) {
 
-                            if ("minecraft:spruce_log".equals(cel) || "minecraft:spruce_leaves".equals(cel)) {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
+                                if (mc.player.fishing == null) {
+                                    client.player.displayClientMessage(Component.literal("§aZARZUCAM WEDKE!"), false);
+                                    mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+                                    mc.player.swing(InteractionHand.MAIN_HAND);
+                                    czyZlowiono.set(false);
                                 }
-                                client.options.keyAttack.setDown(true);
-                                client.options.keyUse.setDown(false);
-                            } else {
-                                if(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE) != -1){
-                                    mc.player.getInventory().setSelectedSlot(controler.znajdzSlotZPrzedmiotem(Items.DIAMOND_AXE));
-                                }
-                                client.options.keyAttack.setDown(false);
-                                client.options.keyUp.setDown(true);
-                                client.options.keyUse.setDown(false);
                             }
                         }
                     }
-                        }else{
-                            client.player.displayClientMessage(Component.literal("§6Brak drewna w okolicy"), false);
-                            client.options.keyAttack.setDown(false);
-                            client.options.keyUp.setDown(false);
-                            client.player.setYRot(90);
-                            client.player.setXRot(0);
-                        }
-
                 }
-
-                if (!active || client.player == null) return;
-
-                client.player.displayClientMessage(Component.literal(controler.coWidze()), false);
-//                client.player.setYRot(90);
-//                client.player.setXRot(0);
-//                client.options.keyAttack.setDown(true);
-//                if (durabilityCheck() < 20) {
-//                    client.player.connection.sendCommand("repair");
-//                }
-//
-//                if (timer < 7) {
-//                    client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, 0.3);
-//
-//                } else if (timer < 14) {
-//                    client.player.setDeltaMovement(0.0, client.player.getDeltaMovement().y, -0.3);
-//
-//                } else {
-//
-//                    timer = 0;
-//                }
             }catch (Exception e) {
-                e.printStackTrace(); // Wypisze błąd w konsoli
-                drewno = false;      // Wyłączy bota
-                active = false;
-                if (client.player != null) {
-                    client.player.displayClientMessage(Component.literal("§cBłąd bota! Sprawdź logi (konsolę)."), false);
-                }
+                e.printStackTrace();
             }
+
         });
 
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(literal("kop")
+            dispatcher.register(literal("rybki")
                     .executes(context -> {
 
                         active = !active;
 
-                        if(active) {
-                            context.getSource().sendFeedback(Component.literal(controler.coWidze()));
-                        }
                         timer = 0;
                         if (active) {
-                            context.getSource().sendFeedback(Component.literal("§aWłączyłeś auto-kopanie!"));
+                            context.getSource().sendFeedback(Component.literal("§aWłączyłeś auto-lowienie!"));
                         } else {
                             context.getSource().sendFeedback(Component.literal("§cZatrzymano."));
                         }
@@ -219,25 +165,8 @@ public class ExampleModClient implements ClientModInitializer {
                         return 1;
                     }));
 
-            dispatcher.register(literal("craftuj")
-                    .executes(context -> {
 
-                            crafting();
 
-                        return 1;
-                    }));
-
-            dispatcher.register(literal("drewno")
-                    .executes(context -> {
-                        drewno = !drewno;
-
-                        if (drewno) {
-                            context.getSource().sendFeedback(Component.literal("§aWłączyłeś kopanie drewna!"));
-                        } else {
-                            context.getSource().sendFeedback(Component.literal("§cZatrzymano."));
-                        }
-                        return 1;
-                    }));
 
 
         });

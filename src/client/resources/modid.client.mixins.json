@@ -3,9 +3,12 @@
 	"package": "com.example.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"ExampleClientMixin"
+		"ExampleClientMixin",
+        "InGameHudAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1
 	}
 }
+
+

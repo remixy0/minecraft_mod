@@ -38,6 +38,8 @@ public class ExampleModClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
 
+
+
         Thread watekSieciowy = new Thread(() -> {
             while (true) {
                 mojSerwer.polacz();
@@ -73,6 +75,8 @@ public class ExampleModClient implements ClientModInitializer {
 
         final double[][] blok = new double[1][3];
         final int[] stan_drewna = {0};
+
+
 
 
         // 1. Rejestrujemy PĘTLĘ GRY (To wykonuje się 20 razy na sekundę)

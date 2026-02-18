@@ -112,7 +112,6 @@ public class ExampleModClient implements ClientModInitializer {
                                 if (style.getColor() != null) {
                                     String colorName = style.getColor().toString();
                                     list.add(colorName);
-                                    System.out.println("Znak: '" + text + "' ma kolor: " + colorName);
                                 }
                                 return java.util.Optional.empty();
                             }, net.minecraft.network.chat.Style.EMPTY);
@@ -122,7 +121,7 @@ public class ExampleModClient implements ClientModInitializer {
                             }
 
                             if (list.stream().distinct().count() == 3 & !czyZlowiono.get()) {
-                                client.player.displayClientMessage(Component.literal("§aTERAZ LOWIC!"), false);
+                                client.player.displayClientMessage(Component.literal("§aTERAZ!"), false);
                                 mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                                 mc.player.swing(InteractionHand.MAIN_HAND);
                                 counterZlowiono.set(0);
@@ -130,14 +129,19 @@ public class ExampleModClient implements ClientModInitializer {
 
 
                         } else {
-                            if (mc.player != null && mc.gameMode != null) {
-
+                            var player = mc.player;
+                            ItemStack item = player.getMainHandItem();
+                            if (mc.player != null && mc.gameMode != null && item.getItem() == Items.FISHING_ROD) {
                                 if (mc.player.fishing == null) {
                                     client.player.displayClientMessage(Component.literal("§aZARZUCAM WEDKE!"), false);
                                     mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                                     mc.player.swing(InteractionHand.MAIN_HAND);
                                     czyZlowiono.set(false);
                                 }
+                            }else{
+                                client.player.displayClientMessage(Component.literal("§aZgubilem wedke!"), false);
+                                active = false;
+
                             }
                         }
                     }
@@ -150,7 +154,7 @@ public class ExampleModClient implements ClientModInitializer {
 
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(literal("rybki")
+            dispatcher.register(literal("ry")
                     .executes(context -> {
 
                         active = !active;

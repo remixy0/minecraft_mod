@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -160,9 +160,9 @@ public class Controler {
         return sum;
     }
 
-    public void clickSlot(int windowId, int slotId, int button, ClickType type) {
+    public void clickSlot(int windowId, int slotId, int button, ContainerInput type) {
         if (mc.gameMode != null) {
-            mc.gameMode.handleInventoryMouseClick(windowId, slotId, button, type, mc.player);
+            mc.gameMode.handleContainerInput(windowId, slotId, button, type, mc.player);
         }
     }
 
@@ -174,14 +174,14 @@ public class Controler {
         int windowId = mc.player.containerMenu.containerId;
 
         int slotZDiamentem = znajdzSlotZPrzedmiotem(Items.STONE);
-        clickSlot(windowId, slotZDiamentem, 0, ClickType.PICKUP);
+        clickSlot(windowId, slotZDiamentem, 0, ContainerInput.PICKUP);
         for(int i = 0; i <= 64; i++) {
             for (int craftingSlot = 1; craftingSlot <= 4; craftingSlot++) {
-                clickSlot(windowId, craftingSlot, 1, ClickType.PICKUP);
+                clickSlot(windowId, craftingSlot, 1, ContainerInput.PICKUP);
             }
         }
 
-        clickSlot(windowId, 0, 0,ClickType.QUICK_MOVE);
+        clickSlot(windowId, 0, 0,ContainerInput.QUICK_MOVE);
         return;
 
     }

@@ -1,10 +1,11 @@
 {
 	"required": true,
 	"package": "com.example.mixin.client",
-	"compatibilityLevel": "JAVA_21",
+	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"ExampleClientMixin",
-        "InGameHudAccessor"
+        "ObrotZSerweraMixin",
+        "KopanieMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
